@@ -21,3 +21,15 @@ def answer_query(user_query, retrieved_chunks):
     )
 
     return response.choices[0].message.content
+
+
+import openai
+
+openai.api_key = "YOUR_KEY"
+
+def call_openai(prompt):
+    res = openai.ChatCompletion.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return res.choices[0].message.content

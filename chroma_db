@@ -1,0 +1,56 @@
+import chromadb
+import os
+
+VECTOR_DB_PATH = "./vector_db"
+
+client = chromadb.PersistentClient(path=VECTOR_DB_PATH)
+
+collection = client.get_or_create_collection(
+    name="confluence_embeddings",
+    metadata={"hnsw:space": "cosine"}   # cosine similarity (best for MiniLM)
+)
+
+
+def store_embeddings(chunks, embeddings, metadatas):
+    ids = [f"doc_{i}" for i in range(len(chunks))]
+
+    collection.add(
+        ids=ids,
+        documents=chunks,
+        embeddings=embeddings,
+        metadatas=metadatas
+    )
+
+    print(f"Stored {len(chunks)} chunks in vector DB")
+
+
+def search_knowledge_base(query_embedding, top_k=5):
+    return collection.query(
+        query_embeddings=[query_embedding],
+        n_results=top_k
+    )
+
+
+# For Jira issues
+def store_in_chroma(issue_doc):
+    text = issue_doc["text"]
+    chunks = chunk_text(text)
+
+    for idx, chunk in enumerate(chunks):
+        chunk_id = f"{issue_doc['id']}_chunk_{idx}"
+
+        embedding = model.encode(chunk).tolist()
+
+        metadata = {
+            "jira_key": issue_doc["id"],
+            "url": issue_doc["url"],
+            "summary": issue_doc["summary"],
+            "chunk_index": idx
+        }
+
+        collection.add(
+            ids=[chunk_id],
+            embeddings=[embedding],
+            documents=[chunk],
+            metadatas=[metadata]
+        )
